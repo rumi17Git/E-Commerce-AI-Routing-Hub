@@ -1,66 +1,127 @@
 # E-Commerce AI Routing Hub
 
-An enterprise-grade, hybrid NLP gateway combining a **fine-tuned DistilBERT intent classifier**, deterministic business orchestration, and automated **multilingual translation layers** (`Helsinki-NLP` + `SentencePiece`) designed to satisfy international compliance and routing architectures. Fine-tuned on Amazon customer support interactions filtered from the Twitter Customer Support Dataset ([Kaggle](https://www.kaggle.com/datasets/thoughtvector/customer-support-on-twitter)).
+A multilingual customer support routing system combining a fine-tuned DistilBERT intent classifier with MarianMT translation middleware, built on Amazon customer support interactions filtered from the [Twitter Customer Support Dataset](https://www.kaggle.com/datasets/thoughtvector/customer-support-on-twitter).
 
-**[Live Interactive Web Demo on Hugging Face Spaces](https://huggingface.co/spaces/RummanJ17/ecommerce-ai-routing-hub)**
+**[Live Interactive Demo on Hugging Face Spaces](https://huggingface.co/spaces/RummanJ17/ecommerce-ai-routing-hub)**
+
+---
+
+## Results
+
+Fine-tuned on 80% of the dataset, evaluated on the held-out 20% (320 samples, balanced across 4 classes).
+
+| Intent Class | Precision | Recall | F1-Score | Support |
+|---|---|---|---|---|
+| WHERE_IS_MY_ORDER | 0.97 | 0.90 | 0.94 | 83 |
+| REFUND_REQUEST | 0.94 | 0.98 | 0.96 | 84 |
+| PRODUCT_FEEDBACK | 0.93 | 0.97 | 0.95 | 64 |
+| CANCEL_ORDER | 1.00 | 1.00 | 1.00 | 89 |
+| **Overall (weighted avg)** | **0.96** | **0.96** | **0.96** | **320** |
+
+Training converged cleanly over 3 epochs with no signs of overfitting (validation loss: 0.65 → 0.19 → 0.14).
 
 ---
 
 ## System Architecture
 
-The gateway handles incoming customer tickets asynchronously across language boundaries, deciding whether to serve automated deterministic templated responses or escalate to a human reviewer based on mathematical model calibration.
+Incoming customer tickets are handled asynchronously across language boundaries. The system decides whether to serve a deterministic templated response or escalate to a human reviewer based on the classifier's confidence score.
 
 ```text
-                  [ User Query (EN or FR) ]
-                             │
-                             ▼
-                [ Language Detection Layer ]
-                             │
-              ┌──────────────┴──────────────┐
-       Detected: English             Detected: French
-              │                             │
-              │                             ▼
-              │                  [ MarianMT Translation ]
-              │                        (FR ──> EN)
-              ▼                             │
-     ┌──────────────────────────────────────┴┐
-     │   DistilBERT Intent Classification    │
-     └───────────────────────────────────────┘
-                             │
-              ┌──────────────┴──────────────┐
-       Confidence ≥ 72%?             Confidence < 72%?
-              │                             │
-              ▼                             ▼
-     [ Static Response ]           [ Fallback GenAI Draft ]
-    (Deterministic Match)         (Human-in-the-Loop Flagged)
-              │                             │
-              └──────────────┬──────────────┘
-                             │
-              ┌──────────────┴──────────────┐
-       Original Query French?        Original Query English?
-              │                             │
-              ▼                             ▼
-   [ MarianMT Translation ]          [ Final Response ]
-         (EN ──> FR)                        │
-              │                             │
-              ▼                             ▼
-       [ Final Response ]            [ Return Payload ]
-
+          [ User Query (EN or FR) ]
+                       │
+                       ▼
+          [ Language Detection Layer ]
+                       │
+        ┌──────────────┴──────────────┐
+ Detected: English             Detected: French
+        │                             │
+        │                             ▼
+        │                  [ MarianMT Translation ]
+        │                        (FR → EN)
+        ▼                             │
+ ┌──────────────────────────────────────┐
+ │   DistilBERT Intent Classification   │
+ └──────────────────────────────────────┘
+                       │
+        ┌──────────────┴──────────────┐
+ Confidence ≥ 72%?             Confidence < 72%?
+        │                             │
+        ▼                             ▼
+ [ Static Response ]         [ Fallback GenAI Draft ]
+(Deterministic Match)       (Human-in-the-Loop Flagged)
+        │                             │
+        └──────────────┬──────────────┘
+                       │
+        ┌──────────────┴──────────────┐
+ Original Query French?      Original Query English?
+        │                             │
+        ▼                             ▼
+ [ MarianMT Translation ]     [ Final Response ]
+       (EN → FR)
+        │
+        ▼
+ [ Final Response ]
 ```
-
-## Core Engineering Features
-
-* **Fine-Tuned Intent Core:** Fine-tuned an open-source **DistilBERT** sequence classifier, hitting an evaluation accuracy score of **96.8%** across critical operational e-commerce intents (`WHERE_IS_MY_ORDER`, `REFUND_REQUEST`, `CANCEL_ORDER`, `PRODUCT_FEEDBACK`).
-* **Multilingual Localization Middleware:** Implemented an automated localization layer using **MarianMT Architecture** via Google's **SentencePiece** tokenization. This allows an English-trained classifier core to gracefully read, process, and accurately reply to international French client text.
-* **FastAPI Calibration Routing Engine:** Configured an explicit **Confidence Score Threshold ($72\%$)** to orchestrate compliance workflows. Safe queries are automatically dispatched, while low-confidence queries or edge cases are flagged with automated **Human-In-The-Loop** alert states.
-* **Dual-Pane Telemetry UI:** Wrapped the backend routing architecture inside a customized **Gradio Web Dashboard** that splits user-facing customer simulation from administrative agent telemetry.
 
 ---
 
-## Project Architecture & Layout
+## Core Features
+
+- **Fine-tuned intent classifier:** DistilBERT fine-tuned for sequence classification across four e-commerce intents, achieving 96% accuracy and 0.96 weighted F1 on the held-out test set.
+- **Multilingual middleware:** MarianMT (Helsinki-NLP) with SentencePiece tokenization allows the English-trained classifier to handle French-language input and return responses in the original query language.
+- **Confidence-based routing:** A calibrated 72% confidence threshold routes high-confidence queries to deterministic templated responses and flags low-confidence or edge-case queries for human review.
+- **Dual-pane telemetry dashboard:** A Gradio interface separates customer-facing query simulation from agent-side telemetry, including confidence scores and routing decisions.
+
+---
+
+## Tech Stack
+
+![Python](https://img.shields.io/badge/Python-3.12-blue)
+![PyTorch](https://img.shields.io/badge/PyTorch-2.x-orange)
+![Transformers](https://img.shields.io/badge/HuggingFace-Transformers-yellow)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.11x-green)
+![Gradio](https://img.shields.io/badge/Gradio-5.x-purple)
+
+---
+
+## Project Structure
+
 ```text
 ├── app/
-│   ├── main.py        # FastAPI Backend Core, Translation Tensors & Thresholding
-│   └── app.py         # Gradio Presentation Interface Layout & HTML Alert Renderers
-├── requirements.txt   # Core Dependencies (transformers, torch, langdetect, etc.)
-└── .gitignore         # Pycache, Virtual Environment & Token Exclusions
+│   ├── main.py        # FastAPI backend, translation tensors, confidence thresholding
+│   └── app.py         # Gradio dashboard layout and alert renderers
+├── requirements.txt   # Core dependencies
+└── .gitignore
+```
+
+---
+
+## How to Run Locally
+
+```bash
+git clone https://github.com/RummanJ17/ecommerce-ai-routing-hub
+cd ecommerce-ai-routing-hub
+pip install -r requirements.txt
+uvicorn app.main:app --reload
+```
+
+Then open `http://localhost:8000` in your browser, or launch the Gradio interface directly:
+
+```bash
+python app/app.py
+```
+
+---
+
+## Limitations
+
+- **Domain specificity:** The classifier was fine-tuned on Twitter-style customer support text (short, informal messages). Performance may degrade on formal, technical, or highly domain-specific language outside the training distribution.
+- **Language support:** The translation middleware currently supports English and French only. Extending to additional languages would require additional MarianMT model pairs.
+- **Confidence threshold:** The 72% routing threshold was tuned empirically on this dataset. Deployment in a different customer support context would require recalibration against domain-specific validation data.
+- **Intent coverage:** The system handles four intents. Queries outside these categories (billing disputes, account access, general enquiries) will be routed to the human-review fallback regardless of confidence score.
+
+---
+
+## Dataset
+
+[Twitter Customer Support Dataset](https://www.kaggle.com/datasets/thoughtvector/customer-support-on-twitter) — filtered to Amazon customer support interactions for e-commerce relevance.
