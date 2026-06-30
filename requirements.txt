@@ -1,5 +1,28 @@
-transformers
-torch
-langdetect
-sentencepiece
-sacremoses
+# Core ML / NLP
+torch==2.6.0
+transformers==5.9.0
+datasets==5.0.0
+evaluate==0.4.6
+scikit-learn==1.9.0
+sentencepiece==0.2.1
+
+# Translation
+sacremoses==0.1.1
+
+# Language Detection
+langdetect==1.0.9
+
+# HuggingFace
+huggingface_hub==1.16.1
+
+# API Backend
+fastapi==0.136.3
+uvicorn==0.48.0
+pydantic==2.13.4
+requests==2.34.2
+
+# Frontend / Demo
+gradio==6.15.2
+
+# Utilities
+numpy==2.4.6
