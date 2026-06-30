@@ -99,8 +99,8 @@ Incoming customer tickets are handled asynchronously across language boundaries.
 ## How to Run Locally
 
 ```bash
-git clone https://github.com/RummanJ17/ecommerce-ai-routing-hub
-cd ecommerce-ai-routing-hub
+git clone https://github.com/rumi17Git/E-Commerce-AI-Routing-Hub
+cd E-Commerce-AI-Routing-Hub
 pip install -r requirements.txt
 uvicorn app.main:app --reload
 ```
